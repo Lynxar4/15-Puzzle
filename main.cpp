@@ -1,4 +1,8 @@
-#include <iostream>
+#include<iostream>
+#include <vector>
+#include <cstddef>
+
+constexpr int g_consoleLines{ 25 };
 
 class Tile
 {
@@ -36,21 +40,48 @@ std::ostream& operator<<(std::ostream& out, const Tile& tile)
     {
         out << "  " << tile.getNum() << " ";
     }
-        return out;
+    return out;
+}
+
+class Board
+{
+public:
+    Board() = default;
+
+    friend std::ostream& operator<<(std::ostream& out, const Board& board);
+
+private:
+    static constexpr int s_size{ 4 };
+    Tile m_tiles[s_size][s_size]{
+        Tile{1}, Tile{2}, Tile{3}, Tile{4},
+        Tile{5}, Tile{6}, Tile{7}, Tile{8},
+        Tile{9}, Tile{10}, Tile{11}, Tile{12},
+        Tile{13}, Tile{14}, Tile{15}
+    };
+};
+
+std::ostream& operator<<(std::ostream& out, const Board& board)
+{
+    for (int i{ 0 }; i < g_consoleLines; ++i)
+    {
+        std::cout << '\n';
+    }
+
+    for (std::size_t i{0}; i < board.s_size; ++i)
+    {
+        for (std::size_t j{ 0 }; j < board.s_size; ++j)
+        {
+            out << board.m_tiles[i][j];
+        }
+        std::cout << '\n';
+    }
+    return out;
 }
 
 int main()
 {
-    Tile tile1{ 10 };
-    Tile tile2{ 8 };
-    Tile tile3{ 0 }; // the missing tile
-    Tile tile4{ 1 };
-
-    std::cout << "0123456789ABCDEF\n"; // to make it easy to see how many spaces are in the next line
-    std::cout << tile1 << tile2 << tile3 << tile4 << '\n';
-
-    std::cout << std::boolalpha << tile1.isEmpty() << ' ' << tile3.isEmpty() << '\n';
-    std::cout << "Tile 2 has number: " << tile2.getNum() << "\nTile 4 has number: " << tile4.getNum() << '\n';
+    Board board{};
+    std::cout << board;
 
     return 0;
 }
