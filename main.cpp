@@ -2,14 +2,92 @@
 #include <vector>
 #include <cstddef>
 #include <limits>
+#include <cassert>
+#include "Random.h"
 
 constexpr int g_consoleLines{ 25 };
+
+class Direction
+{
+public:
+    enum Type
+    {
+        up,
+        left,
+        down,
+        right,
+        maxDirections,
+    };
+
+    Direction(Type type)
+        : m_type{ type }
+    {}
+
+    Type getType() const
+    {
+        return m_type;
+    }
+
+    Direction operator-() const
+    {
+        switch (m_type)
+        {
+        case up:
+            return Direction{ down };
+        case left:
+            return Direction{ right };
+        case down:
+            return Direction{ up };
+        case right:
+            return Direction{ left };
+        default:
+            break;
+        }
+
+        assert(0 && "Unsupported direction was passed!"); // 0 makes the assertion evaluate to false
+        return Direction{ up }; 
+    }
+
+    static Direction getRandomDirection()
+    {
+        Type random{ static_cast<Type>(Random::get(0, Type::maxDirections - 1)) };
+        return Direction{ random };
+    }
+
+    friend std::ostream& operator<<(std::ostream& out, const Direction& direction);
+
+private:
+    Type m_type{};
+};
+
+std::ostream& operator<<(std::ostream& out, const Direction& direction)
+{
+    switch (direction.m_type)
+    {
+        case Direction::up:
+            return out << "up";
+        case Direction::down:
+            return out << "down";
+        case Direction::left:
+            return out << "left";
+        case Direction::right:
+            return out << "right";
+        default:
+            break;
+    }
+    assert(0 && "Unsupported direction was passed!");
+    return out << "unknown direction";
+}
 
 namespace Input
 {
     bool isValidCommand(char c)
     {
-        return c == 'w' || c == 'a' || c == 's' || c == 'd' || c == 'q';
+        return c == 'w'
+            || c == 'a'
+            || c == 's'
+            || c == 'd'
+            || c == 'q';
     }
 
     char getCharacter()
@@ -28,6 +106,24 @@ namespace Input
             ch = getCharacter();
         }
         return ch;
+    }
+
+    Direction commandToDirection(char command)
+    {
+        switch (command)
+        {
+        case 'w':
+            return Direction{ Direction::up };
+        case 'a':
+            return Direction{ Direction::left };
+        case 's':
+            return Direction{ Direction::down };
+        case 'd':
+            return Direction{ Direction::right };
+        }
+
+        assert(0 && "Invalid command was passed!");
+        return Direction{ Direction::up };
     }
 }
 
@@ -110,15 +206,26 @@ int main()
     Board board{};
     std::cout << board;
 
+    for (int i{ 0 }; i < 4; ++i)
+    {
+        std::cout << "Generating a random direction... " << Direction::getRandomDirection() << '\n';
+    }
+    std::cout << '\n';
+
+    std::cout << "Enter a command: \n";
+
     while (true)
     {
         char command{ Input::getUserInput() };
-        std::cout << "Valid command: " << command << '\n';
+
         if (command == 'q')
         {
             std::cout << "\n\nBye!\n\n";
             break;
         }
+
+        Direction dir{ Input::commandToDirection(command) };
+        std::cout << "You entered direction: " << dir << '\n';
     }
 
     return 0;
