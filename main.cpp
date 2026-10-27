@@ -1,8 +1,35 @@
 #include<iostream>
 #include <vector>
 #include <cstddef>
+#include <limits>
 
 constexpr int g_consoleLines{ 25 };
+
+namespace Input
+{
+    bool isValidCommand(char c)
+    {
+        return c == 'w' || c == 'a' || c == 's' || c == 'd' || c == 'q';
+    }
+
+    char getCharacter()
+    {
+        char ch{};
+        std::cin >> ch;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return ch;
+    }
+
+    char getUserInput()
+    {
+        char ch{};
+        while (!isValidCommand(ch))
+        {
+            ch = getCharacter();
+        }
+        return ch;
+    }
+}
 
 class Tile
 {
@@ -82,6 +109,17 @@ int main()
 {
     Board board{};
     std::cout << board;
+
+    while (true)
+    {
+        char command{ Input::getUserInput() };
+        std::cout << "Valid command: " << command << '\n';
+        if (command == 'q')
+        {
+            std::cout << "\n\nBye!\n\n";
+            break;
+        }
+    }
 
     return 0;
 }
