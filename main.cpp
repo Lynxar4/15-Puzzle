@@ -45,7 +45,7 @@ public:
         }
 
         assert(0 && "Unsupported direction was passed!"); // 0 makes the assertion evaluate to false
-        return Direction{ up }; 
+        return Direction{ up };
     }
 
     static Direction getRandomDirection()
@@ -62,19 +62,58 @@ std::ostream& operator<<(std::ostream& out, const Direction& direction)
 {
     switch (direction.getType())
     {
-        case Direction::up:
-            return out << "up";
-        case Direction::down:
-            return out << "down";
-        case Direction::left:
-            return out << "left";
-        case Direction::right:
-            return out << "right";
-        default:
-            break;
+    case Direction::up:
+        return out << "up";
+    case Direction::down:
+        return out << "down";
+    case Direction::left:
+        return out << "left";
+    case Direction::right:
+        return out << "right";
+    default:
+        break;
     }
     assert(0 && "Unsupported direction was passed!");
     return out << "unknown direction";
+}
+
+struct Point
+{
+    int row{};
+    int column{};
+
+    Point getAdjacentPoint(const Direction direction) const
+    {
+        switch (direction.getType())
+        {
+        case Direction::up:
+            return { row - 1, column};
+        case Direction::down:
+            return { row + 1, column };
+        case Direction::left:
+            return { row, column - 1 };
+        case Direction::right:
+            return { row, column + 1 };
+        default:
+            break;
+        }
+        assert(0 && "Unsupported direction was passed!");
+        return *this;
+    }
+
+    friend bool operator==(const Point& point1, const Point& point2);
+
+    friend bool operator!=(const Point& point1, const Point& point2);
+};
+
+bool operator==(const Point& point1, const Point& point2)
+{
+    return point1.row == point2.row && point1.column == point2.column;
+}
+
+bool operator!=(const Point& point1, const Point& point2)
+{
+    return point1.row != point2.row || point1.column != point2.column;
 }
 
 namespace Input
@@ -171,13 +210,57 @@ public:
 
     friend std::ostream& operator<<(std::ostream& out, const Board& board);
 
+    Point getEmptyPoint()
+    {
+        for (std::size_t i{ 0 }; i < s_size; ++i)
+        {
+            for (std::size_t j{ 0 }; j < s_size; ++j)
+            {
+                if (m_tiles[i][j].isEmpty())
+                {
+                    return { static_cast<int>(i), static_cast<int>(j) };
+                }
+            }
+        }
+        return { 67, 67 };
+    }
+
+    bool checkValidPosition(Point point)
+    {
+        if (point.row >= 0 && point.row <= 3 && point.column >= 0 && point.column <= 3)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    void moveTile(Direction dir)
+    {
+        Point emptyTilePoint{ getEmptyPoint() };
+        Tile& emptyTile{ m_tiles[emptyTilePoint.row][emptyTilePoint.column]};
+
+        Point adjacentTilePoint{ emptyTilePoint.getAdjacentPoint(-dir) };
+        Tile& adjacentTile{m_tiles[adjacentTilePoint.row][adjacentTilePoint.column]};
+
+        bool valid{ checkValidPosition(adjacentTilePoint) };
+        if (!valid)
+        {
+            return;
+        }
+
+        Tile temp{};
+        temp = emptyTile;
+        emptyTile = adjacentTile;
+        adjacentTile = temp;
+    }
+
 private:
     static constexpr int s_size{ 4 };
     Tile m_tiles[s_size][s_size]{
         Tile{1}, Tile{2}, Tile{3}, Tile{4},
         Tile{5}, Tile{6}, Tile{7}, Tile{8},
         Tile{9}, Tile{10}, Tile{11}, Tile{12},
-        Tile{13}, Tile{14}, Tile{15}
+        Tile{13}, Tile{14}, Tile{15}, Tile{0}
     };
 };
 
@@ -188,7 +271,7 @@ std::ostream& operator<<(std::ostream& out, const Board& board)
         std::cout << '\n';
     }
 
-    for (std::size_t i{0}; i < board.s_size; ++i)
+    for (std::size_t i{ 0 }; i < board.s_size; ++i)
     {
         for (std::size_t j{ 0 }; j < board.s_size; ++j)
         {
@@ -199,57 +282,8 @@ std::ostream& operator<<(std::ostream& out, const Board& board)
     return out;
 }
 
-struct Point
-{
-    int x{};
-    int y{};
-
-    Point getAdjacentPoint(const Direction direction) const
-    {
-        switch (direction.getType())
-        {
-        case Direction::up:
-            return { x, y - 1 };
-        case Direction::down:
-            return { x, y + 1 };
-        case Direction::left:
-            return { x - 1, y };
-        case Direction::right:
-            return { x + 1, y };
-        default:
-            break;
-        }
-        assert(0 && "Unsupported direction was passed!");
-        return *this;
-    }
-
-    friend bool operator==(const Point& point1, const Point& point2);
-
-    friend bool operator!=(const Point& point1, const Point& point2);
-};
-
-bool operator==(const Point& point1, const Point& point2)
-{
-    return point1.x == point2.x && point1.y == point2.y;
-}
-
-bool operator!=(const Point& point1, const Point& point2)
-{
-    return point1.x != point2.x || point1.y != point2.y;
-}
-
 int main()
 {
-    // Test code from learncpp
-    std::cout << std::boolalpha;
-    std::cout << (Point{ 1, 1 }.getAdjacentPoint(Direction::up) == Point{ 1, 0 }) << '\n';
-    std::cout << (Point{ 1, 1 }.getAdjacentPoint(Direction::down) == Point{ 1, 2 }) << '\n';
-    std::cout << (Point{ 1, 1 }.getAdjacentPoint(Direction::left) == Point{ 0, 1 }) << '\n';
-    std::cout << (Point{ 1, 1 }.getAdjacentPoint(Direction::right) == Point{ 2, 1 }) << '\n';
-    std::cout << (Point{ 1, 1 } != Point{ 2, 1 }) << '\n';
-    std::cout << (Point{ 1, 1 } != Point{ 1, 2 }) << '\n';
-    std::cout << !(Point{ 1, 1 } != Point{ 1, 1 }) << '\n';
-
     Board board{};
     std::cout << board;
 
@@ -273,6 +307,8 @@ int main()
 
         Direction dir{ Input::commandToDirection(command) };
         std::cout << "You entered direction: " << dir << '\n';
+        board.moveTile(dir);
+        std::cout << board;
     }
 
     return 0;
