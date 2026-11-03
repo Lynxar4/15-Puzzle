@@ -108,7 +108,7 @@ struct Point
 
     friend bool operator!=(const Point& point1, const Point& point2)
     {
-        return point1.x != point2.x || point1.y != point2.y;
+        return !(point1 == point2);
     }
 };
 
@@ -205,16 +205,17 @@ public:
     Board() = default;
 
     friend std::ostream& operator<<(std::ostream& out, const Board& board);
+    friend bool isComplete(const Board& board);
 
-    Point getEmptyPoint()
+    Point getEmptyPoint() const
     {
-        for (int column{ 0 }; column < s_size; ++column)
+        for (int y{ 0 }; y < s_size; ++y)
         {
-            for (int row{ 0 }; row < s_size; ++row)
+            for (int x{ 0 }; x < s_size; ++x)
             {
-                if (m_tiles[column][row].isEmpty())
+                if (m_tiles[y][x].isEmpty())
                 {
-                    return {row, column};
+                    return {x, y};
                 }
             }
         }
@@ -247,6 +248,17 @@ public:
         return true;
     }
 
+    void randomize()
+    {
+        for (int i{ 0 }; i < 1000;)
+        {
+            if (moveTile(Direction::getRandomDirection()))
+            {
+                ++i;
+            }
+        }
+    }
+
 private:
     static constexpr int s_size{ 4 };
     Tile m_tiles[s_size][s_size]{
@@ -270,24 +282,48 @@ std::ostream& operator<<(std::ostream& out, const Board& board)
         {
             out << board.m_tiles[i][j];
         }
-        std::cout << '\n';
+        out << '\n';
     }
     return out;
+}
+
+bool isComplete(const Board& board)
+{
+    bool complete{ true };
+    int counter{ 1 };
+
+    for (int i{ 0 }; i < board.s_size; ++i)
+    {
+        for (int j{ 0 }; j < board.s_size; ++j)
+        {
+            if (counter == 16)
+            {
+                counter = 0;
+            }
+            if (board.m_tiles[i][j].getNum() != counter)
+            {
+                return false;
+            }
+            ++counter;
+        }
+    }
+
+    return true;
 }
 
 int main()
 {
     Board board{};
+    board.randomize();
     std::cout << board;
 
-    std::cout << "Enter a command: \n";
     while (true)
     {
         char command{ Input::getUserInput() };
 
         if (command == 'q')
         {
-            std::cout << "\n\nBye!\n\n";
+            std::cout << "\n\nWow you couldn't solve a simple puzzle.\n\n";
             break;
         }
 
@@ -296,6 +332,11 @@ int main()
         if (tileSwapped)
         {
             std::cout << board;
+        }
+        if (isComplete(board))
+        {
+            std::cout << "You won!\n";
+            break;
         }
     }
 
