@@ -79,21 +79,21 @@ std::ostream& operator<<(std::ostream& out, const Direction& direction)
 
 struct Point
 {
-    int row{};
-    int column{};
+    int x{};
+    int y{};
 
     Point getAdjacentPoint(const Direction direction) const
     {
         switch (direction.getType())
         {
         case Direction::up:
-            return { row - 1, column};
+            return { x, y - 1 };
         case Direction::down:
-            return { row + 1, column };
+            return { x, y + 1 };
         case Direction::left:
-            return { row, column - 1 };
+            return { x - 1, y };
         case Direction::right:
-            return { row, column + 1 };
+            return { x + 1, y };
         default:
             break;
         }
@@ -101,20 +101,16 @@ struct Point
         return *this;
     }
 
-    friend bool operator==(const Point& point1, const Point& point2);
+    friend bool operator==(const Point& point1, const Point& point2)
+    {
+        return point1.x == point2.x && point1.y == point2.y;
+    }
 
-    friend bool operator!=(const Point& point1, const Point& point2);
+    friend bool operator!=(const Point& point1, const Point& point2)
+    {
+        return point1.x != point2.x || point1.y != point2.y;
+    }
 };
-
-bool operator==(const Point& point1, const Point& point2)
-{
-    return point1.row == point2.row && point1.column == point2.column;
-}
-
-bool operator!=(const Point& point1, const Point& point2)
-{
-    return point1.row != point2.row || point1.column != point2.column;
-}
 
 namespace Input
 {
@@ -212,46 +208,43 @@ public:
 
     Point getEmptyPoint()
     {
-        for (std::size_t i{ 0 }; i < s_size; ++i)
+        for (int column{ 0 }; column < s_size; ++column)
         {
-            for (std::size_t j{ 0 }; j < s_size; ++j)
+            for (int row{ 0 }; row < s_size; ++row)
             {
-                if (m_tiles[i][j].isEmpty())
+                if (m_tiles[column][row].isEmpty())
                 {
-                    return { static_cast<int>(i), static_cast<int>(j) };
+                    return {row, column};
                 }
             }
         }
-        return { 67, 67 };
+        assert(0 && "There is no empty tiles in this board!");
+        return { -1, -1 };
     }
 
-    bool checkValidPosition(Point point)
+    static bool isValidPosition(Point point)
     {
-        if (point.row >= 0 && point.row <= 3 && point.column >= 0 && point.column <= 3)
-        {
-            return true;
-        }
-        return false;
+        return point.x >= 0 && point.x < s_size
+            && point.y >= 0 && point.y < s_size;
     }
 
-    void moveTile(Direction dir)
+    void swapTiles(Point pt1, Point pt2)
+    {
+        std::swap(m_tiles[pt1.y][pt1.x], m_tiles[pt2.y][pt2.x]);
+    }
+
+    bool moveTile(Direction dir)
     {
         Point emptyTilePoint{ getEmptyPoint() };
-        Tile& emptyTile{ m_tiles[emptyTilePoint.row][emptyTilePoint.column]};
-
         Point adjacentTilePoint{ emptyTilePoint.getAdjacentPoint(-dir) };
-        Tile& adjacentTile{m_tiles[adjacentTilePoint.row][adjacentTilePoint.column]};
 
-        bool valid{ checkValidPosition(adjacentTilePoint) };
-        if (!valid)
+        if (!isValidPosition(adjacentTilePoint))
         {
-            return;
+            return false;
         }
 
-        Tile temp{};
-        temp = emptyTile;
-        emptyTile = adjacentTile;
-        adjacentTile = temp;
+        swapTiles(emptyTilePoint, adjacentTilePoint);
+        return true;
     }
 
 private:
@@ -287,14 +280,7 @@ int main()
     Board board{};
     std::cout << board;
 
-    for (int i{ 0 }; i < 4; ++i)
-    {
-        std::cout << "Generating a random direction... " << Direction::getRandomDirection() << '\n';
-    }
-    std::cout << '\n';
-
     std::cout << "Enter a command: \n";
-
     while (true)
     {
         char command{ Input::getUserInput() };
@@ -306,9 +292,11 @@ int main()
         }
 
         Direction dir{ Input::commandToDirection(command) };
-        std::cout << "You entered direction: " << dir << '\n';
-        board.moveTile(dir);
-        std::cout << board;
+        bool tileSwapped{ board.moveTile(dir) };
+        if (tileSwapped)
+        {
+            std::cout << board;
+        }
     }
 
     return 0;
